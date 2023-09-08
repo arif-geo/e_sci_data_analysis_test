@@ -1,1 +1,0 @@
-/fdsnws/station/1/query?minlat=39.5&maxlat=41.5&minlon=-130&maxlon=-120&start=1967-01-01&end=2023-09-05&level=station&format=text&includeavailability=true
