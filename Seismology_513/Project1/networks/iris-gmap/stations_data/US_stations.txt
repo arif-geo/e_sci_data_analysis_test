@@ -1,2 +1,0 @@
-Network , Station , Latitude , Longitude , Elevation , Sitename , StartTime , EndTime
-US,WDC,40.580002,-122.539719,300.0,"Whiskeytown Dam, Shasta County, California, USA",1992-09-18T00:00:00,2007-02-07T06:35:00
