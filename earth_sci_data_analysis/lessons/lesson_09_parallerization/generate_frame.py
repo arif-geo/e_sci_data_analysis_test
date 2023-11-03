@@ -64,5 +64,4 @@ def generate_frame(
         # save the plot
         output_file = os.path.join(output_dir, f'tcw_{timestep:04d}.png')
         fig.savefig(output_file, dpi=150, bbox_inches='tight')
-
-        # plt.show()
+        plt.close(fig)
