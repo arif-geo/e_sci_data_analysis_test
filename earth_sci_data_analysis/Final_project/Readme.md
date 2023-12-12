@@ -13,9 +13,10 @@ This final project sub-repository contains the codes and data for my final proje
             * This code will avoid download duplicates as different datacenters have common seismic stations. \
         * I will define a function using python `multiprocessing` library to parallelize the process and divide stations to download among multiple processing units to sped up the whole process.
 
-Final publication quality (Figure 3 in part_1 notebook) is in the same folder as this `readme.md` file.
+Final publication quality (Figure 3 in part_1 notebook)
 
-
+![Alt text](pub_figure.png)
+Figure: This figure shows earthquake locations (black dots) that are located (in terms of depth) above the interface between two converging plates. Red-blue color grading clearly shows the depth of the interface increasing to the west. Earthquake magnitude is indicated by the size of the dots and depth by darkness of the dots. Note that the dots are exaggerated to make them more visible.
 
 
 <!-- Please ignore the following as I was not able to go that far I will do these step for my own research
