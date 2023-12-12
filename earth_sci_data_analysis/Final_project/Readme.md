@@ -11,7 +11,7 @@ This final project sub-repository contains the codes and data for my final proje
         * First I will get the inventory file for a event (which networks, stations, channels recorded the data). \
         * A for loop will go through each Datacenter, each network, each station and so on. \
             * This code will avoid download duplicates as different datacenters have common seismic stations. \
-        *  I will define a function 
+        * I will define a function using python `multiprocessing` library to parallelize the process and divide stations to download among multiple processing units to sped up the whole process.
 
 
 
