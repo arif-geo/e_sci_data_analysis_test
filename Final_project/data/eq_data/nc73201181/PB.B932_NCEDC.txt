@@ -1,4 +1,0 @@
-#Network|Station|Location|Channel|Latitude|Longitude|Elevation|Depth|Azimuth|Dip|SensorDescription|Scale|ScaleFreq|ScaleUnits|SampleRate|StartTime|EndTime
-PB|B932||EH1|40.275002|-124.221199|52.0|412.0|136.5|0.0|HS-1-LT/Quanterra 330 Linear Phase Composite|781398000.0|20.0|M/S|100.0|2008-10-17T00:00:00|3000-01-01T00:00:00
-PB|B932||EH2|40.275002|-124.221199|52.0|412.0|226.5|0.0|HS-1-LT/Quanterra 330 Linear Phase Composite|781398000.0|20.0|M/S|100.0|2008-10-17T00:00:00|3000-01-01T00:00:00
-PB|B932||EHZ|40.275002|-124.221199|52.0|412.0|0.0|-90.0|HS-1-LT/Quanterra 330 Linear Phase Composite|781398000.0|20.0|M/S|100.0|2008-10-17T00:00:00|3000-01-01T00:00:00

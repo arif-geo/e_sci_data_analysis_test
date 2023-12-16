@@ -1,2 +1,0 @@
-#Network|Station|Location|Channel|Latitude|Longitude|Elevation|Depth|Azimuth|Dip|SensorDescription|Scale|ScaleFreq|ScaleUnits|SampleRate|StartTime|EndTime
-NC|KIP||EHZ|39.808407|-123.4813|1341.0|0.0|0.0|-90.0|L4|766236839.0749|10.0|M/S|100.0|2015-10-29T22:00:00|2019-08-21T20:42:00

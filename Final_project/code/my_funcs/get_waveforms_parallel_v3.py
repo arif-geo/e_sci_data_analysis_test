@@ -36,7 +36,6 @@ def download_station(args):
                 starttime=starttime,
                 endtime=endtime,
             )
-            print(f"successful station: {network.code}.{station.code}.{priority_channel}")
 
             # Download station information
             try:
@@ -54,6 +53,7 @@ def download_station(args):
                 # inv_list.append(temp_inv)
                 st_local += temp_st
                 inv_local.networks.extend(temp_inv.networks)
+                print(f"successful stream and inv: {network.code}.{station.code}.{priority_channel}")
                 
                 success_stn.append(station.code)
                 logger.info(f"Waveform downloaded: {network.code}.{station.code}.{priority_channel} from {client.base_url}.")
@@ -105,10 +105,10 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
                 args_list.append((client, network, station, priority_channels, starttime, endtime, output_folder, st, inv))
 
     # Parallelize the loop over stations
-    pool = Pool(processes=4)
+    pool = Pool(processes=6)
     with tqdm(total=len(args_list)) as pbar:
         for temp_st, temp_inv in pool.imap_unordered(download_station, args_list):
-            pbar.update(1)
+            pbar.update(1) # update progress bar for each station
             st += temp_st
             inv.networks.extend(temp_inv.networks)
 
@@ -117,7 +117,8 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
     pool.join()
 
     # Write waveforms to file
-    # st.write(f"{output_folder}/event_waveforms.mseed", format="MSEED")
-    # inv.write(f"{output_folder}/event_inventory.xml", format="STATIONXML")
-    # inv.write(f"{output_folder}/event_inventory.txt", format="STATIONTXT")
-    st[1].plot();
+    st.write(f"{output_folder}/event_waveforms.mseed", format="MSEED")
+    inv.write(f"{output_folder}/event_inventory.xml", format="STATIONXML")
+    inv.write(f"{output_folder}/event_inventory.txt", format="STATIONTXT")
+    # st[1].plot();
+    # return st, inv
