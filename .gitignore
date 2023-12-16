@@ -1,2 +1,6 @@
-/.DS_Store
-earth_sci_data_analysis/.DS_Store
+.DS_Store
+*.pyc
+.ipynb_checkpoints
+__pycache__
+.vscode
+
