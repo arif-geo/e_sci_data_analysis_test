@@ -16,7 +16,7 @@ def download_station(args):
     Download waveforms and station information for a specific station.
     This function will be used in parallel processing.
     """
-    client, network, station, priority_channels, starttime, endtime, output_folder, st, inv = args
+    client, network, station, priority_channels, starttime, endtime, output_folder, st, inv, success_stn = args
     st_local = Stream()
     inv_local = Inventory()
 
@@ -26,6 +26,10 @@ def download_station(args):
             continue
         # print(f"{network.code}.{station.code}.[{priority_channel}]")
 
+        # check if this station has already been downloaded for a priority channel
+        # if #1 (HH*) is downloaded, skip #2 (BH*) etc.
+        if station.code in success_stn:
+            break
         try:
             # print(f'{network.code}.{station.code}.{priority_channel}_{starttime}_{endtime}')
             temp_st = client.get_waveforms(
@@ -49,13 +53,13 @@ def download_station(args):
                     level="response",
                 )
 
-                # waveforms_list.append(temp_st)
-                # inv_list.append(temp_inv)
+                # if station.code not in success_stn:
+                success_stn.append(station.code)
                 st_local += temp_st
                 inv_local.networks.extend(temp_inv.networks)
-                print(f"successful stream and inv: {network.code}.{station.code}.{priority_channel}")
+                # print(f"successful stream and inv: {network.code}.{station.code}.{priority_channel}")
                 
-                success_stn.append(station.code)
+                
                 logger.info(f"Waveform downloaded: {network.code}.{station.code}.{priority_channel} from {client.base_url}.")
                 logger.info(f"Inventory downloaded: {len(success_stn)} out of {len(inventory.get_contents()['stations'])} stations.")
                 
@@ -102,7 +106,7 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
 
         for network in inventory.networks:
             for station in network.stations:
-                args_list.append((client, network, station, priority_channels, starttime, endtime, output_folder, st, inv))
+                args_list.append((client, network, station, priority_channels, starttime, endtime, output_folder, st, inv, success_stn))
 
     # Parallelize the loop over stations
     pool = Pool(processes=6)

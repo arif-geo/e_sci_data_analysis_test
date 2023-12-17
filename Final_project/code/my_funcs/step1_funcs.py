@@ -9,9 +9,10 @@ import glob
 from geopy.distance import geodesic
 import os
 
-def convert_lat_lon_to_xy(latitude, longitude):
+
+def convert_lat_lon_to_xy(latitude, longitude, radius=6371):
     """
-        Convert latitude and longitude to x, y
+    Convert latitude and longitude to x, y
     Input:
         latitude: np.array or float
         longitude: np.array or float
@@ -19,67 +20,15 @@ def convert_lat_lon_to_xy(latitude, longitude):
         x: np.array or int, km
         y: np.array or int, km
     """
-    # Convert latitude and longitude to UTM coordinates (eastings, northings, zone number, zone letter)
-    clat, clon = 40.5, -124
-    utm_centers = utm.from_latlon(clat, clon)
-    easting_center, northing_center = utm_centers[0], utm_centers[1]
-    utm_coords = utm.from_latlon(latitude, longitude)
-    easting, northing = utm_coords[0], utm_coords[1]
-    easting, northing = (easting - easting_center) / 1e3, (northing - northing_center) / 1e3
-    return easting, northing
+    # Convert latitude and longitude from degrees to radians
+    # lat_rad = np.radians(latitude)
+    # long_rad = np.radians(longitude)
 
-#==================================================================================================
+    # use utm module to convert lat/lon to x/y
+    x, y, _, _ = utm.from_latlon(latitude, longitude)
+    x, y = x/1000, y/1000  # convert to km 
 
-def read_phase_picks(filename_picks, folder_station):
-    """
-    Input:
-        filename_picks: filename of the phasepicks
-        filename_station: filename of the station information
-    Output:
-        phasepicks: np.array((npicks, 4))
-            4 columns are: station x position,
-                           station y position,
-                           phasetype (1 for P, 2 for S),
-                           demeaned arrival time
-        mean_arrival_time: UTCDateTime format
-            mean of all the phase pick times
-    """
-    sta_files = glob.glob('{}/*.txt'.format(folder_station))
-    sta_loc = {}
-    sta_xy = np.zeros((len(sta_files), 2))
-    for i in range(0, len(sta_files)):
-        df = pd.read_csv(sta_files[i], 
-                         sep='|', 
-                         header=0,
-                         usecols=[1, 4, 5])                         
-        staname, slat, slon = df['Station'][0], df['Latitude'][0], df['Longitude'][0]
-        sx, sy = convert_lat_lon_to_xy(slat, slon)
-        sta_loc[str(staname)] = [sx, sy]
-        sta_xy[i, :] = [slon, slat]
-    print('x: {} {}'.format(np.min(sta_xy[:, 0]), np.max(sta_xy[:, 0])))
-    print('y: {} {}'.format(np.min(sta_xy[:, 1]), np.max(sta_xy[:, 1])))
-    
-    df_picks = pd.read_csv(filename_picks, sep='\s+', header=None, skiprows=1, usecols=[1, 2, 4, 8],
-                     names=['date', 'time', 'sta', 'phase'],
-                     dtype={'date': str, 'time': str, 'sta': str, 'phase': str})
-    npick = df_picks.shape[0]
-    phasepicks = np.zeros((npick, 4))
-    arrival_time = []
-    for i in range(0, npick):
-        stastr = df_picks['sta'][i]
-        staname = stastr.split('.')[1]
-        sx, sy = sta_loc[staname]
-        if df_picks['phase'][i] == 'P':
-            phasetype = 1
-        else:
-            phasetype = 2
-        arrival_time.append(UTCDateTime('{}T{}'.format(df_picks['date'][i], df_picks['time'][i])))
-        phasepicks[i, 0:3] = [sx, sy, phasetype]
-
-    mean_arrival_time = get_mean_arrival(arrival_time)
-    for i in range(0, npick):
-        phasepicks[i, 3] = arrival_time[i] - mean_arrival_time
-    return phasepicks, mean_arrival_time
+    return x, y
 
 #==================================================================================================
 
@@ -139,57 +88,6 @@ def get_mean_arrival(arrival_time):
 
 #==================================================================================================
 
-def get_sta_lat_lon(filename_picks, folder_station):
-    """
-    For plotting
-    """
-    sta_files = glob.glob('{}/*.txt'.format(folder_station))
-    sta_loc = {}
-    sta_xy = np.zeros((len(sta_files), 2))
-    for i in range(0, len(sta_files)):
-        df = pd.read_csv(sta_files[i], 
-                         sep='|', 
-                         header=0,
-                         usecols=[1, 4, 5])                         
-        staname, slat, slon = df['Station'][0], df['Latitude'][0], df['Longitude'][0]
-        sta_loc[str(staname)] = [slat, slon]
-
-    df_picks = pd.read_csv(filename_picks, sep='\s+', header=None, skiprows=1, usecols=[1, 2, 4, 8],
-                     names=['date', 'time', 'sta', 'phase'],
-                     dtype={'date': str, 'time': str, 'sta': str, 'phase': str})
-    npick = df_picks.shape[0]
-    sta_position = np.zeros((npick, 2))
-    for i in range(0, npick):
-        stastr = df_picks['sta'][i]
-        staname = stastr.split('.')[1]
-        slat, slon = sta_loc[staname]
-        sta_position[i, :] = [slat, slon]
-    return sta_position[:,0], sta_position[:,1]
-
-#==================================================================================================
-
-def get_sta_dist(filename_picks, elat, elon):
-    """
-    For plotting
-    """
-    sta_files = glob.glob('{}/*.txt'.format(folder_station))
-    stanames = []
-    distances = []
-    for i in range(0, len(sta_files)):
-        df = pd.read_csv(sta_files[i], 
-                         sep='|', 
-                         header=0,
-                         usecols=[1, 4, 5])                         
-        staname, slat, slon = df['Station'][0], df['Latitude'][0], df['Longitude'][0]
-        if staname in stanames:
-            continue
-        stanames.append(staname)
-        distances.append(geodesic((elat, elon), (slat, slon)).km)
-    distances = np.array(distances)
-    return stanames, distances
-
-#==================================================================================================
-
 def get_phasepicks_list(filename):
     # [phasetime]
     df = pd.read_csv(filename, sep='\s+', header=None, skiprows=1, usecols=[1,2,4,8], \
@@ -206,7 +104,21 @@ def get_phasepicks_list(filename):
 #==================================================================================================
 
 def get_polarity(filename, folder_station):
+    """
+    Input:
+        filename: filename of the polarity file
+        folder_station: folder containing station information
+    Output: 
+        polarities: np.array((npick, 3))
+            3 columns are: polarity (1 for positive, -1 for negative),
+                           station latitude,
+                           station longitude
+        stanames: list
+            list of station names
+    """
+
     sta_loc = get_sta_loc(folder_station)
+
     df = pd.read_csv(filename, sep='\s+', header=None, skiprows=1, usecols=[4,8,9], \
                      names=['sta', 'phase', 'polarity'],\
                      dtype={'sta':str,'phase':str, 'polarity': str})
@@ -216,29 +128,182 @@ def get_polarity(filename, folder_station):
         stastr, phasetype, polarity = df['sta'][i], df['phase'][i], df['polarity'][i]
         if polarity == '1' and phasetype == 'P':
             sta = stastr.split('.')[1]
-            slat, slon = sta_loc[sta][0], sta_loc[sta][1]
+            slon, slat = sta_loc[sta][0], sta_loc[sta][1]
             polarities.append([1, slat, slon])
             stanames.append(sta)
         elif polarity == '-1' and phasetype == 'P':
             sta = stastr.split('.')[1]
-            slat, slon = sta_loc[sta][0], sta_loc[sta][1]
+            slon, slat = sta_loc[sta][0], sta_loc[sta][1]
             polarities.append([-1, slat, slon])
             stanames.append(sta)
     polarities = np.array(polarities)
     return polarities, stanames
 
 #==================================================================================================
+
+def read_phase_picks(filename_picks, folder_station):
+    """
+    Input:
+        filename_picks: filename of the phasepicks
+        filename_station: filename of the station information
+    Output:
+        phasepicks: np.array((npicks, 4))
+            4 columns are: station x position,
+                           station y position,
+                           phasetype (1 for P, 2 for S),
+                           demeaned arrival time
+        mean_arrival_time: UTCDateTime format
+            mean of all the phase pick times
+    """
+    sta_file = f"{folder_station}/event_inventory.txt"
+
+    # read station inventory file
+    sta_df = pd.read_csv(sta_file, 
+                        sep='|', 
+                        header=0,
+                        usecols=[1, 4, 5]) # Station|Latitude|Longitude    
+    # keep only unique station names
+    sta_df = sta_df.drop_duplicates(subset=['Station'])
+
+    # read phase picks file
+    df_picks = pd.read_csv(filename_picks, sep='\s+', header=None, skiprows=1, usecols=[1, 2, 4, 8],
+                     names=['date', 'time', 'sta', 'phase'],
+                     dtype={'date': str, 'time': str, 'sta': str, 'phase': str})
     
+    # get number of picks
+    npick = df_picks.shape[0]
+
+    # get station name, latitude, longitude
+    staname, slat, slon = sta_df['Station'].values, sta_df['Latitude'].values, sta_df['Longitude'].values
+    
+    # convert lat, lon to x, y
+    sx, sy = convert_lat_lon_to_xy(slat, slon)
+
+    # Create an array of shape (len(sta_df), 2) to hold [slon, slat] pairs
+    sta_xy = np.column_stack((sx, sy))
+
+    # Create sta_loc dictionary using broadcasting
+    sta_loc = dict(zip(staname, sta_xy))
+    
+    
+
+    # define an empty np.array to store phase picks 
+    phasepicks = np.zeros((npick, 4))
+
+    # loop over all picks
+    arrival_time = []
+    for i in range(0, npick):
+        # get station name
+        stastr = df_picks['sta'][i]
+        staname = stastr.split('.')[1]
+
+        # get station x, y, and phasetype
+        sx, sy = sta_loc[staname]
+
+        if df_picks['phase'][i] == 'P':
+            phasetype = 1
+        else:
+            phasetype = 2
+
+        arrival_time.append(UTCDateTime('{}T{}'.format(df_picks['date'][i], df_picks['time'][i])))
+        
+        # append x, y and phasetype to phasepicks
+        phasepicks[i, 0:3] = [sx, sy, phasetype]
+
+    mean_arrival_time = get_mean_arrival(arrival_time)
+    for i in range(0, npick):
+        # append demeaned arrival time to phasepicks
+        phasepicks[i, 3] = arrival_time[i] - mean_arrival_time
+    return phasepicks, mean_arrival_time
+
+#==================================================================================================
+
+def get_sta_lat_lon(filename_picks, folder_station):
+    """
+    Input:
+        filename_picks: filename of the phasepicks
+        folder_station: folder containing station information
+    Output:
+        lat and lon of all the stations that are in the phasepicks file i.e. the stations 
+        that has been used to pick the event(s)
+
+    N.B. almost same as the following function get_sta_loc
+    """
+    sta_file = f"{folder_station}/event_inventory.txt"
+
+    # read station inventory file
+    sta_df = pd.read_csv(sta_file, 
+                        sep='|', 
+                        header=0,
+                        usecols=[1, 4, 5]) # Station|Latitude|Longitude    
+    # keep only unique station names
+    sta_df = sta_df.drop_duplicates(subset=['Station'])
+
+    # Create sta_loc dictionary using broadcasting
+    sta_loc = dict(zip(sta_df.Station.values, zip(sta_df.Longitude.values, sta_df.Latitude.values)))
+
+    # read phase picks file
+    df_picks = pd.read_csv(filename_picks, sep='\s+', header=None, skiprows=1, usecols=[1, 2, 4, 8],
+                     names=['date', 'time', 'sta', 'phase'],
+                     dtype={'date': str, 'time': str, 'sta': str, 'phase': str})
+    npick = df_picks.shape[0]
+
+    sta_position = np.zeros((npick, 2))
+    for i in range(0, npick):
+        stastr = df_picks['sta'][i]
+        staname = stastr.split('.')[1]
+        slon, slat = sta_loc[staname]
+        sta_position[i, :] = [slon, slat]
+    return sta_position[:,0], sta_position[:,1] # lon, lat
+
+#==================================================================================================
 def get_sta_loc(folder_station):
-    sta_files = glob.glob('{}/*.txt'.format(folder_station))
-    sta_loc = {}
-    for i in range(0, len(sta_files)):
-        df = pd.read_csv(sta_files[i], 
-                         sep='|', 
-                         header=0,
-                         usecols=[1, 4, 5])                         
-        staname, slat, slon = df['Station'][0], df['Latitude'][0], df['Longitude'][0]
-        sta_loc[str(staname)] = [slat, slon]    
+
+    """
+    Input:
+        folder_station: folder containing station information
+    Output: 
+        sta_loc: dictionary
+            key: station name
+            value: [longitude, latitude]
+    """
+
+    sta_file = f"{folder_station}/event_inventory.txt"
+
+    # read station inventory file
+    sta_df = pd.read_csv(sta_file, 
+                        sep='|', 
+                        header=0,
+                        usecols=[1, 4, 5]) # Station|Latitude|Longitude    
+    # keep only unique station names
+    sta_df = sta_df.drop_duplicates(subset=['Station'])
+
+    # Create sta_loc dictionary using broadcasting
+    sta_loc = dict(zip(sta_df.Station.values, zip(sta_df.Longitude.values, sta_df.Latitude.values)))
+
     return sta_loc
 
 #==================================================================================================
+def get_sta_dist(folder_station, elat, elon):
+    """
+    For plotting
+    folder_station: folder containing station information (such as ../data/eq_data/event_id/)
+    """
+    sta_file = f"{folder_station}/event_inventory.txt"
+
+    # read station inventory file
+    sta_df = pd.read_csv(sta_file, 
+                        sep='|', 
+                        header=0,
+                        usecols=[1, 4, 5]) # Station|Latitude|Longitude    
+    # keep only unique station names
+    sta_df = sta_df.drop_duplicates(subset=['Station'])
+    stanames, slat, slon = sta_df['Station'].values, sta_df['Latitude'].values, sta_df['Longitude'].values
+    distances = []
+    for i in range(0, len(sta_df)):
+        distances.append(geodesic((elat, elon), (slat[i], slon[i])).km)
+    distances = np.array(distances)
+    return stanames, distances
+
+#==================================================================================================
+    
