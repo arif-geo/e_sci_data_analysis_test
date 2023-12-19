@@ -69,14 +69,15 @@ def get_waveforms(client_list, inventory, event_id, starttime, endtime, output_f
 
                                 # download station information
                                 try:
+                                    print("getting STATION lavel inventory...")
                                     inv = client.get_stations(
                                         network=network,
                                         station=station,
-                                        location="*",
-                                        channel=channel, 
+                                        # location="*",
+                                        # channel=channel, 
                                         starttime=starttime,
                                         endtime=endtime,
-                                        level="response",
+                                        level="station" #"response",
                                     )
                                     
                                     st += temp_st

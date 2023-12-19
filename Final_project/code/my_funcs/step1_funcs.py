@@ -44,19 +44,49 @@ def get_traveltime_points_value(filename):
             corresponding traveltime from the traveltime table
     Please check the lecture notes!!!
     """
-    dep = np.arange(0, 80.1, 0.5)
-    dist = np.arange(0, 150.1, 0.5)
-    df = pd.read_csv(filename, skiprows=3, sep='\s+', header=None)
-    matrix = df.values
-    ndist, ndep = df.shape[0], df.shape[1] - 1
-    points = np.zeros((ndist * ndep, 2))
-    values = np.zeros((ndist * ndep,))
-    count = 0
-    for i in range(0, ndist):
-        for j in range(0, ndep):
-            points[count, :] = [dist[i], dep[j]]
-            values[count] = matrix[i, j + 1]
-            count += 1
+    ########### Ginny's version ############
+    # dep = np.arange(0, 80.1, 0.5)
+    # dist = np.arange(0, 150.1, 0.5)
+    # df = pd.read_csv(filename, skiprows=3, sep='\s+', header=None)
+    # matrix = df.values
+    # ndist, ndep = df.shape[0], df.shape[1] - 1
+    # points = np.zeros((ndist * ndep, 2))
+    # values = np.zeros((ndist * ndep,))
+    # count = 0
+    # for i in range(0, ndist):
+    #     for j in range(0, ndep):
+    #         points[count, :] = [dist[i], dep[j]]
+    #         values[count] = matrix[i, j + 1]
+    #         count += 1
+    # return points, values
+
+    ########### Arif's version ############
+    # read the file
+    df_raw = pd.read_csv(filename, skiprows=2, header=None)
+
+    df = pd.read_csv(filename, skiprows=3,
+                    header=None, sep='\s+')
+
+    # distance in first column
+    distances = df.iloc[:, 0].values
+    # depth in 3rd row of the header / 1st column of the df_raw 
+    depths = df_raw.iloc[0, :] # returns a bad format series
+    depths = pd.DataFrame(depths)[0][0] # convert to string
+    depths = np.array(depths.split()).astype(float) # convert to array of floats
+
+    # points = np.zeros((len(distances), 2))
+    points = []
+    values = []
+    for i, dist in enumerate(distances):
+        for j, dep in enumerate(depths):
+            points.append([dist, dep])
+            values.append(df.at[i, j+1]) # j+1 because the first column is distance, it will 
+                                         # return distance for j=0, not the first depth value
+
+    # convert to np.array
+    points = np.array(points)
+    values = np.array(values)
+
     return points, values
 
 #==================================================================================================
@@ -79,6 +109,10 @@ def get_misfit(array1, array2):
 #==================================================================================================
 
 def get_mean_arrival(arrival_time):
+    """
+    Input:
+        arrival_time: list
+    """
     n = len(arrival_time)
     min_arrival_time = np.min(arrival_time)
     dt = np.zeros((n, ))
@@ -298,6 +332,7 @@ def get_sta_dist(folder_station, elat, elon):
                         usecols=[1, 4, 5]) # Station|Latitude|Longitude    
     # keep only unique station names
     sta_df = sta_df.drop_duplicates(subset=['Station'])
+
     stanames, slat, slon = sta_df['Station'].values, sta_df['Latitude'].values, sta_df['Longitude'].values
     distances = []
     for i in range(0, len(sta_df)):
