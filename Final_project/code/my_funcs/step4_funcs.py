@@ -31,14 +31,19 @@ def read_output1(filename, amp=False):
     st_ratio, 100*(station distribution ratio)
     """
     if amp == False:
-        df = pd.read_csv(filename, header=None, sep='\s+', 
-                     names=['event', 'year', 'month', 'day', 'hour',
-                            'minute', 'sec', 'type', 'mag', 'mmagtype',
+    
+        df = pd.read_csv(filename, header=None,
+                    sep="\s+",
+                    skipinitialspace=True, index_col=False,
+                     names=['event', 
+                            'year', 'month', 'day',
+                            'hour', 'minute', 'sec', 
+                            'type', 'mag', 'mmagtype',
                             'elat', 'elon', 'edep', 'equal', 'eRMS', 
                             'hori_err', 'dep_err', 'ori_time_err',
                             'n_pick', 'n_p_pick', 'n_s_pick', 
                             'strike', 'dip', 'rake', 'err1', 'err2', 
-                            'n_pol', 'weight', 'f_qual', 'prob', 'st_ratio'],
+                            'n_pol', 'weight', 'f_qual', 'prob', 'st_ratio', '*'],
                       dtype={'event':str, 'year':int, 'month':int, 'day':int, 'hour':int,
                             'minute':int, 'sec':float, 'type':str, 'mag':float, 'mmagtype':str,
                             'elat':float, 'elon':float, 'edep':float, 'e_qual':str, 'eRMS':float, 
@@ -86,28 +91,54 @@ def get_polarity(filename_polarity, folder_station, items):
     return polarities, stanames
 #==================================================================================================
 
-def get_sta_latlon(folder_station):
+def get_polarity2(event_folder, event_id):
+    """ 
+    .phase file created earlier will be used to get polarity and station names that are used to pick phases and polarity.
+    don't read line 1 and last line.
+    col names [station , net, channel, I, poarity(U/D)]
     """
-    :param folder_station: folder of station files .txt
+    phase_file = f"{event_folder}/{event_id}.phase"
+    df = pd.read_csv(phase_file, sep='\s+', header=None, skiprows=1, usecols=[0,4],
+                    names=['station', 'polarity'], dtype={'station':str, 'polarity':str})
+    # drop the last row 
+    df = df[:-1]
+
+    df2 = get_sta_latlon(event_folder)
+    print(df.shape, df2.shape)
+
+    # Merge df1 and df2 on the station name, keeping all rows from df1
+    df = df.merge(df2[['Station', 'Latitude', 'Longitude']], how='left', left_on='station', right_on='Station')
+
+    # Drop the extra 'Station_all' column
+    df = df.drop('Station', axis=1)
+    # Rename columns for clarity
+    df = df.rename(columns={'station': 'Station', 'polarity': 'Polarity'})  # Optional
+
+    return df
+
+#==================================================================================================
+
+def get_sta_latlon(event_folder):
+    """
+    :param event_folder: folder of station files .txt
+        folder structure: data/{event_id}/files.foramat
 
     :return:
             stanames: list of station names
             latlon: array of station latitudes and longitudes
     """
-    sta_files = glob.glob('{}/*.txt'.format(folder_station))
-    stanames = []
-    latlon = []
-    for i in range(0, len(sta_files)):
-        df = pd.read_csv(sta_files[i], 
-                         sep='|', 
-                         header=0,
-                         usecols=[1,4,5])                         
-        staname, slat, slon = df['Station'][0], df['Latitude'][0], df['Longitude'][0]
-        if not staname in stanames:
-            stanames.append(staname)
-            latlon.append([slat, slon])
-    latlon = np.array(latlon)
-    return stanames, latlon
+    sta_file = f"{event_folder}/event_inventory.txt"
+    
+    df = pd.read_csv(sta_file, 
+                    sep='|', 
+                    header=0,
+                    usecols=[1,4,5]
+                    )
+    # drop duplicate stations
+    df = df.drop_duplicates(subset=['Station'])
+    df = df.reset_index(drop=True)
+    
+    return df
 
 #==================================================================================================
 

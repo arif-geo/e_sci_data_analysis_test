@@ -4,3 +4,5 @@
 __pycache__
 .vscode
 /Final_project/data/eq_data/
+./Final_project/code/my_funcs/__pycache__
+*.mseed

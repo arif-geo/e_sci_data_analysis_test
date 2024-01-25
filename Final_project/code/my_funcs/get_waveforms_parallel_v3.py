@@ -102,7 +102,6 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
     args_list = []
     for client_name in client_list:
         client = Client(client_name, debug=False, timeout=30)
-        print(f"Fetching data from {client_name}...")
 
         for network in inventory.networks:
             for station in network.stations:
@@ -110,7 +109,7 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
 
     # Parallelize the loop over stations
     pool = Pool(processes=6)
-    with tqdm(total=len(args_list)) as pbar:
+    with tqdm(total=len(args_list), disable=True) as pbar:
         for temp_st, temp_inv in pool.imap_unordered(download_station, args_list):
             pbar.update(1) # update progress bar for each station
             st += temp_st
@@ -121,8 +120,8 @@ def get_waveforms_parallel(client_list, inventory, starttime, endtime, output_fo
     pool.join()
 
     # Write waveforms to file
-    st.write(f"{output_folder}/event_waveforms.mseed", format="MSEED")
-    inv.write(f"{output_folder}/event_inventory.xml", format="STATIONXML")
-    inv.write(f"{output_folder}/event_inventory.txt", format="STATIONTXT")
-    # st[1].plot();
-    # return st, inv
+    # st.write(f"{output_folder}/event_waveforms.mseed", format="MSEED")
+    # # inv.write(f"{output_folder}/event_inventory.xml", format="STATIONXML")
+    # inv.write(f"{output_folder}/{}event_inventory.txt", format="STATIONTXT")
+
+    return st, inv
